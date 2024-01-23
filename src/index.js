@@ -1,0 +1,33 @@
+const express = require("express");
+
+const config = require("./config");
+
+const database = require("./service/database.service")
+
+const filesRouter = require("./files/files.api.router");
+
+const requestLogger = require("./middlewares/request-logger");
+const notFoundHandler = require("./api-utils/not-found-handler");
+const errorHandler = require("./api-utils/error-handler");
+
+async function start() {
+  console.log("Connecting to database");
+
+  await database.initialize()
+  console.log("database connected.. Connecting to server");
+
+  const server = express();
+  server.use(express.json());
+  server.use(requestLogger);
+  
+  server.use("/files", filesRouter)
+
+  server.use(notFoundHandler);
+  server.use(errorHandler);
+    
+  server.listen(config.PORT_NUMBER, () => {
+    console.log(`Server is running at port number ${config.PORT_NUMBER}`)
+  })
+}
+
+start();
