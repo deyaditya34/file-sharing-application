@@ -1,17 +1,18 @@
 const filesService = require("../files/files.service");
 
-
 async function fileNameResolver(fileName = "") {
+  let extensionStartIndex = fileName.indexOf(".");
+  let baseName = fileName.slice(0, extensionStartIndex);
+  let extension = fileName.slice(extensionStartIndex, fileName.length);
+
   let existingFileName = await filesService.checkFileName(fileName);
 
   if (!existingFileName) {
-    return fileName;
+    return {
+      fileName: fileName,
+      extension: extension,
+    };
   } else {
-    
-    let extensionStartIndex = fileName.indexOf(".");
-    let baseName = fileName.slice(0, extensionStartIndex);
-    let extension = fileName.slice(extensionStartIndex, fileName.length);
-
     let count = 1;
     while (existingFileName) {
       let newFileName = `${baseName} (${count})${extension}`;
@@ -20,13 +21,13 @@ async function fileNameResolver(fileName = "") {
 
       if (!existingFileName) {
         return {
-          fileName : newFileName,
-          extension : extension
-        }
+          fileName: newFileName,
+          extension: extension,
+        };
       }
-      count++ 
+      count++;
     }
   }
 }
 
-module.exports = fileNameResolver
+module.exports = fileNameResolver;

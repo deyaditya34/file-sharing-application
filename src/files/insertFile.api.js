@@ -19,7 +19,7 @@ async function controller(req, res) {
   await deleteReadFile(READ_FILE_PATH);
 
   let parsedFileName = await fileNameResolver(file.originalname);
-
+  
   await filesService.insertFile({
     fileId: file.filename,
     fileName: parsedFileName.fileName,
@@ -32,7 +32,7 @@ async function controller(req, res) {
   res.json({
     message: "success",
     data: {
-      fileName: file.originalname,
+      fileName: parsedFileName.fileName,
       fileId: file.filename,
     },
   });
