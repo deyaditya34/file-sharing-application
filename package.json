@@ -7,7 +7,7 @@
     "dev": "node src/index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Aditya Dey",
   "license": "ISC",
   "dependencies": {
     "crypto": "^1.0.1",

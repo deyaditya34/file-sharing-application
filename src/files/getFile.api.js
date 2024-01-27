@@ -1,12 +1,14 @@
 const path = require("path");
 const fs = require("fs-extra");
-const config = require("../config");
 
+const config = require("../config");
 const buildApiHandler = require("../api-utils/build-api-handler");
+const userResolver = require("../middlewares/user-resolver");
 const {
   createParamValidator,
   REQ_COMPONENT,
 } = require("../middlewares/params-validator");
+
 const filesService = require("./files.service");
 
 async function controller(req, res) {
@@ -50,4 +52,4 @@ const missingParamsValidator = createParamValidator(
   REQ_COMPONENT.QUERY
 );
 
-module.exports = buildApiHandler([missingParamsValidator, controller]);
+module.exports = buildApiHandler([userResolver, missingParamsValidator, controller]);

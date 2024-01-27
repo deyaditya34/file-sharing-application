@@ -1,6 +1,7 @@
 const path = require("path");
 
 const buildApiHandler = require("../api-utils/build-api-handler");
+const userResolver = require("../middlewares/user-resolver")
 const config = require("../config");
 const filesService = require("./files.service");
 const fileNameResolver = require("../middlewares/file-name-resolver");
@@ -11,6 +12,7 @@ const {
 
 async function controller(req, res) {
   const file = req.file;
+  const {user} = req.body;
 
   const READ_FILE_PATH = path.join(config.FILE_READ_DIRECTORY, file.filename);
   const WRITE_FILE_PATH = path.join(config.FILE_WRITE_DIRECTORY, file.filename);
@@ -27,6 +29,7 @@ async function controller(req, res) {
     createdAt: new Date(),
     modifiedAt: null,
     deletedAt: null,
+    user: user
   });
 
   res.json({
@@ -38,4 +41,4 @@ async function controller(req, res) {
   });
 }
 
-module.exports = buildApiHandler([controller]);
+module.exports = buildApiHandler([userResolver, controller]);
