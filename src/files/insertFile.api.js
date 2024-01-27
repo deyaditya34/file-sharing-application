@@ -1,41 +1,41 @@
 const path = require("path");
 
 const buildApiHandler = require("../api-utils/build-api-handler");
-const userResolver = require("../middlewares/user-resolver")
+const userResolver = require("../middlewares/user-resolver");
 const config = require("../config");
 const filesService = require("./files.service");
 const fileNameResolver = require("../middlewares/file-name-resolver");
-const {
-  readAndWriteFile,
-  deleteReadFile,
-} = require("../middlewares/file-read-write-resolver");
+const fileEncryption = require("../middlewares/file-encryption");
 
 async function controller(req, res) {
   const file = req.file;
-  const {user} = req.body;
+  const { user } = req.body;
 
   const READ_FILE_PATH = path.join(config.FILE_READ_DIRECTORY, file.filename);
   const WRITE_FILE_PATH = path.join(config.FILE_WRITE_DIRECTORY, file.filename);
 
-  await readAndWriteFile(READ_FILE_PATH, WRITE_FILE_PATH);
-  await deleteReadFile(READ_FILE_PATH);
+  let parsedFileName = await fileNameResolver(file.originalname, user);
 
-  let parsedFileName = await fileNameResolver(file.originalname);
-  
+  await fileEncryption.encryptingAndStoringData(
+    READ_FILE_PATH,
+    WRITE_FILE_PATH,
+    parsedFileName.originalName
+  );
+
   await filesService.insertFile({
     fileId: file.filename,
-    fileName: parsedFileName.fileName,
+    fileName: parsedFileName.originalName,
     fileExtension: parsedFileName.extension,
     createdAt: new Date(),
     modifiedAt: null,
     deletedAt: null,
-    user: user
+    user: user,
   });
 
   res.json({
     message: "success",
     data: {
-      fileName: parsedFileName.fileName,
+      fileName: parsedFileName.originalName,
       fileId: file.filename,
     },
   });

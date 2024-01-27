@@ -2,11 +2,12 @@ const buildApiHandler = require("../api-utils/build-api-handler");
 const { searchFile } = require("./files.service");
 
 async function controller(req, res) {
+  const {user} = req.body;
   let parsedQueries = parsedQueryVal(req, "query");
 
   let parsedFilters = parseFilters(parsedQueries);
-  console.log(parsedFilters)
-  const result = await searchFile(parsedFilters);
+  
+  const result = await searchFile(parsedFilters, user);
 
   if (result.length === 0) {
     res.json({

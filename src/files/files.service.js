@@ -5,22 +5,22 @@ async function insertFile(fileDetails) {
   return database.getCollection(config.MYFILES).insertOne(fileDetails);
 }
 
-async function checkFileName(fileName) {
-  return database.getCollection(config.MYFILES).findOne({ fileName: fileName });
+async function checkFileName(fileName, user) {
+  return database.getCollection(config.MYFILES).findOne({ fileName: fileName, user });
 }
 
-async function renameFileName(id, updatedFileName) {
+async function renameFileName(id, updatedFileName, user) {
   return database
     .getCollection(config.MYFILES)
-    .updateOne({ fileId: id }, { $set: { fileName: updatedFileName } });
+    .updateOne({ fileId: id, user }, { $set: { fileName: updatedFileName } });
 }
 
-async function getFile(id) {
-  return database.getCollection(config.MYFILES).findOne({ fileId: id });
+async function getFile(id, user) {
+  return database.getCollection(config.MYFILES).findOne({ fileId: id, user });
 }
 
-async function searchFile(filter) {
-  return database.getCollection(config.MYFILES).find(filter).toArray();
+async function searchFile(filter, user) {
+  return database.getCollection(config.MYFILES).find(filter, user).toArray();
 }
 
 module.exports = {

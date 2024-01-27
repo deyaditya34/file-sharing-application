@@ -10,11 +10,13 @@ const {
 } = require("../middlewares/params-validator");
 
 const filesService = require("./files.service");
+const { decipher } = require("../middlewares/file-decryption");
 
 async function controller(req, res) {
   const { id } = req.query;
+  const { user } = req.body;
 
-  const existingFile = await filesService.getFile(id);
+  const existingFile = await filesService.getFile(id, user);
 
   if (!existingFile) {
     res.json({
@@ -25,25 +27,30 @@ async function controller(req, res) {
 
   const READ_FILE_PATH = path.join(config.FILE_WRITE_DIRECTORY, id);
 
-  res.setHeader("Content-Type", "application/octet-stream");
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  );
   res.setHeader(
     "Content-Disposition",
     `attachment; filename=${existingFile.fileName}`
   );
 
-  const fileReadStream = fs.createReadStream(READ_FILE_PATH);
+  const fsReadStream = fs.createReadStream(READ_FILE_PATH);
 
-  fileReadStream.pipe(res);
+  fsReadStream.pipe(decipher).pipe(res);
 
-  fileReadStream.on("error", (err) => {
-    console.error(`Error in streaming the file: ${err}`);
+  fsReadStream.on("error", (err) => {
+    console.error(
+      `Error in streaming the file - '${existingFile.fileName}': ${err}`
+    );
     res.status(500).json({
       message: "Internal Server Error",
     });
   });
 
-  res.on("close", () => {
-    fileReadStream.close();
+  res.on("finish", () => {
+    fsReadStream.close();
   });
 }
 
@@ -52,4 +59,8 @@ const missingParamsValidator = createParamValidator(
   REQ_COMPONENT.QUERY
 );
 
-module.exports = buildApiHandler([userResolver, missingParamsValidator, controller]);
+module.exports = buildApiHandler([
+  userResolver,
+  missingParamsValidator,
+  controller,
+]);

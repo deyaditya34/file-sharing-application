@@ -1,17 +1,17 @@
 const filesService = require("../files/files.service");
 
-async function fileNameResolver(fileName = "") {
+async function fileNameResolver(fileName = "", user = {}) {
   let extensionStartIndex = fileName.indexOf(".");
 
   if (extensionStartIndex >= 0) {
     let baseName = fileName.slice(0, extensionStartIndex);
     let extension = fileName.slice(extensionStartIndex, fileName.length);
 
-    let existingFileName = await filesService.checkFileName(fileName);
+    let existingFileName = await filesService.checkFileName(fileName, user);
 
     if (!existingFileName) {
       return {
-        fileName: fileName,
+        originalName: fileName,
         extension: extension,
       };
     } else {
@@ -19,11 +19,11 @@ async function fileNameResolver(fileName = "") {
       while (existingFileName) {
         let newFileName = `${baseName} (${count})${extension}`;
 
-        existingFileName = await filesService.checkFileName(newFileName);
+        existingFileName = await filesService.checkFileName(newFileName, user);
 
         if (!existingFileName) {
           return {
-            fileName: newFileName,
+            originalName: newFileName,
             extension: extension,
           };
         }
@@ -31,22 +31,22 @@ async function fileNameResolver(fileName = "") {
       }
     }
   } else {
-    let existingFileName = await filesService.checkFileName(fileName);
+    let existingFileName = await filesService.checkFileName(fileName, user);
 
     if (!existingFileName) {
       return {
-        fileName: fileName,
+        originalName: fileName,
       };
     } else {
       let count = 1;
       while (existingFileName) {
         let newFileName = `${fileName} (${count})`;
 
-        existingFileName = await filesService.checkFileName(newFileName);
+        existingFileName = await filesService.checkFileName(newFileName, user);
 
         if (!existingFileName) {
           return {
-            fileName: newFileName,
+            originalName: newFileName,
           };
         }
         count++;
