@@ -30,6 +30,7 @@ async function controller(req, res) {
     modifiedAt: null,
     deletedAt: null,
     user: user,
+    sharedWith: [],
   });
 
   res.json({

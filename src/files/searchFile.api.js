@@ -1,5 +1,6 @@
 const buildApiHandler = require("../api-utils/build-api-handler");
 const { searchFile } = require("./files.service");
+const userResolver = require("../middlewares/user-resolver")
 
 async function controller(req, res) {
   const {user} = req.body;
@@ -7,7 +8,7 @@ async function controller(req, res) {
 
   let parsedFilters = parseFilters(parsedQueries);
   
-  const result = await searchFile(parsedFilters, user);
+  const result = await searchFile(parsedFilters, user.username);
 
   if (result.length === 0) {
     res.json({
@@ -80,4 +81,4 @@ function parseFilters(obj) {
   return result;
 }
 
-module.exports = buildApiHandler([controller]);
+module.exports = buildApiHandler([userResolver, controller]);

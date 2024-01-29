@@ -6,7 +6,9 @@ async function insertFile(fileDetails) {
 }
 
 async function checkFileName(fileName, user) {
-  return database.getCollection(config.MYFILES).findOne({ fileName: fileName, user });
+  return database
+    .getCollection(config.MYFILES)
+    .findOne({ fileName: fileName, user });
 }
 
 async function renameFileName(id, updatedFileName, user) {
@@ -15,12 +17,20 @@ async function renameFileName(id, updatedFileName, user) {
     .updateOne({ fileId: id, user }, { $set: { fileName: updatedFileName } });
 }
 
-async function getFile(id, user) {
-  return database.getCollection(config.MYFILES).findOne({ fileId: id, "user.username": user });
+async function getFile(id, username) {
+  return database
+    .getCollection(config.MYFILES)
+    .findOne({ fileId: id, "user.username": username });
 }
 
-async function searchFile(filter, user) {
-  return database.getCollection(config.MYFILES).find(filter, user).toArray();
+async function searchFile(filter, username) {
+  return database.getCollection(config.MYFILES).find(filter, {$or : [{"user.username": username}, {sharedWith: "username"}]}).toArray();
+}
+
+async function shareFile(id, username) {
+  return database
+    .getCollection(config.MYFILES)
+    .updateOne({ fileId: id }, { $push: { sharedWith: username } });
 }
 
 module.exports = {
@@ -28,5 +38,6 @@ module.exports = {
   checkFileName,
   renameFileName,
   getFile,
-  searchFile
+  searchFile,
+  shareFile
 };
