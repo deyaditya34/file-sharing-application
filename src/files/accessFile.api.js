@@ -1,32 +1,37 @@
 const path = require("path");
-const fs = require("fs-extra");
+const fs = require("fs-extra")
 
-const config = require("../config");
 const buildApiHandler = require("../api-utils/build-api-handler");
 const userResolver = require("../middlewares/user-resolver");
-const {
-  createParamValidator,
-  REQ_COMPONENT,
-} = require("../middlewares/params-validator");
-
+const jwtService = require("../service/jwt.service");
+const paramsValidator = require("../middlewares/params-validator");
+const config = require("../config");
 const filesService = require("./files.service");
 const { decipher } = require("../middlewares/file-decryption");
 
 async function controller(req, res) {
-  const { id } = req.query;
-  const { user } = req.body;
+  const { fileToken } = req.query;
 
-  const existingFile = await filesService.getFile(id, user.username);
-
+  const fileDetails = decodeId(fileToken);
+  
+  const existingFile = await filesService.getFile(
+    fileDetails.fileId,
+    fileDetails.username
+  );
+  console.log(existingFile);  
+  
   if (!existingFile) {
     res.json({
-      message: `No file found for the id - ${id}`,
+      message: "No file found for the given link",
     });
     return;
   }
 
-  const READ_FILE_PATH = path.join(config.FILE_WRITE_DIRECTORY, id);
-
+  const READ_FILE_PATH = path.join(
+    config.FILE_WRITE_DIRECTORY,
+    existingFile.fileId
+  );
+  
   res.setHeader(
     "Content-Type",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation"
@@ -54,9 +59,18 @@ async function controller(req, res) {
   });
 }
 
-const missingParamsValidator = createParamValidator(
-  ["id"],
-  REQ_COMPONENT.QUERY
+function decodeId(token) {
+  let payload = jwtService.decodeToken(token, config.JWT_SECRET_KEY);
+
+  return {
+    fileId: payload.id,
+    username: payload.username
+  };
+}
+
+const missingParamsValidator = paramsValidator.createParamValidator(
+  ["fileToken"],
+  paramsValidator.REQ_COMPONENT.QUERY
 );
 
 module.exports = buildApiHandler([

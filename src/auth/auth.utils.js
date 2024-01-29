@@ -20,7 +20,6 @@ function encryptPassword(password) {
 
 async function getUserFromToken(token) {
   const payload = jwtService.decodeToken(token);
-  console.log("payload -", payload);
   if (!payload) {
     return null;
   }
@@ -31,10 +30,9 @@ async function getUserFromToken(token) {
     .getCollection(config.COLLECTION_NAME_USERS)
     .findOne(
       { username: username },
-      { projection: { _id: false, password: false } }
+      { projection: { _id: false, password: false, role: false } }
     );
 
-  console.log("user -", user);
   return user;
 }
 

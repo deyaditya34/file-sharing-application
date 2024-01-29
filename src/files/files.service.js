@@ -16,7 +16,7 @@ async function renameFileName(id, updatedFileName, user) {
 }
 
 async function getFile(id, user) {
-  return database.getCollection(config.MYFILES).findOne({ fileId: id, user });
+  return database.getCollection(config.MYFILES).findOne({ fileId: id, "user.username": user });
 }
 
 async function searchFile(filter, user) {
