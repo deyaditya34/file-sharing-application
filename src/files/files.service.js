@@ -41,6 +41,12 @@ async function shareFile(id, username) {
     .updateOne({ fileId: id }, { $push: { sharedWith: username } });
 }
 
+async function deleteFile(id, username) {
+  return database
+  .getCollection(config.MYFILES)
+  .deleteOne({fieldId: id}, {"user.username": username})
+}
+
 module.exports = {
   insertFile,
   checkFileName,
@@ -48,4 +54,5 @@ module.exports = {
   getFile,
   searchFile,
   shareFile,
+  deleteFile
 };

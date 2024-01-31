@@ -9,6 +9,7 @@ const searchFileApi = require("./searchFile.api");
 const shareFileApi = require("./shareFile.api");
 const accessFileApi = require("./accessFile.api");
 const shareFileUserApi = require("./shareFileUser.api");
+const deleteFileApi = require("./deleteFile.api");
 
 const router = express.Router();
 
@@ -19,5 +20,6 @@ router.get("/", searchFileApi);
 router.get("/share/:id", shareFileApi);
 router.get("/access", accessFileApi);
 router.get("/shareUser", shareFileUserApi)
+router.delete("/", deleteFileApi)
 
 module.exports = router;
