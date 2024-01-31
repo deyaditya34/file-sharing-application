@@ -29,7 +29,7 @@ async function controller(req, res) {
 
   res.setHeader(
     "Content-Type",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    `${existingFile.mimeType}`
   );
   res.setHeader(
     "Content-Disposition",

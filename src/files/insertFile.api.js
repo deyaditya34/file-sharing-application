@@ -26,6 +26,7 @@ async function controller(req, res) {
     fileId: file.filename,
     fileName: parsedFileName.originalName,
     fileExtension: parsedFileName.extension,
+    mimeType: file.mimetype,
     createdAt: new Date(),
     modifiedAt: null,
     deletedAt: null,
