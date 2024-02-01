@@ -21,17 +21,17 @@ async function loginUser(username, password) {
       `username - '${username}' or password - '${password}' is invalid.`
     );
   }
-  
+
   console.log("username -", {username})
   const token = createToken({ username });
 
   return token;
 }
 
-async function findUserByUsername(username) {
+async function findUserByUsername(username, role) {
   return database
     .getCollection(config.COLLECTION_NAME_USERS)
-    .findOne( {username} );
+    .findOne( {username, role: role} );
 }
 
 async function findUser(userDetails) {
@@ -40,9 +40,27 @@ async function findUser(userDetails) {
     .findOne(userDetails);
 }
 
+async function loginAdminUser(username, password) {
+  const userDetails = authUtils.buildAdminUser(username, password);
+
+  const existingUser = await findUser(userDetails);
+
+  if (!existingUser) {
+    throw new httpError.BadRequest(
+      `username - '${username}' or password - '${password}' is invalid.`
+    );
+  }
+
+  console.log("username -", {username})
+  const token = createToken({ username });
+
+  return token;
+}
+
 module.exports = {
   registerUser,
   loginUser,
   findUserByUsername,
   findUser,
+  loginAdminUser
 };
