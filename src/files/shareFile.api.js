@@ -4,6 +4,7 @@ const paramsValidator = require("../middlewares/params-validator");
 const filesService = require("./files.service");
 const jwtService = require("../service/jwt.service");
 const config = require("../config");
+const { logReceiver } = require("../logs/log-events");
 
 async function controller(req, res) {
   const { id } = req.params;
@@ -12,6 +13,11 @@ async function controller(req, res) {
   const existingFile = filesService.getFile(id, user);
 
   if (!existingFile) {
+    logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+      fileId: id,
+      username: user.username,
+      resMessage: "File not found"
+    });
     res.json({
       message: "File not found",
     });
@@ -20,6 +26,13 @@ async function controller(req, res) {
 
   const token = generateToken(id, user.username);
   const link = linkGenerate(token);
+
+  logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+    fileId: id,
+    username: user.username,
+    fileLink: link,
+    resMessage: "File link sent"
+  });
 
   res.json({
     message: "File link sent",

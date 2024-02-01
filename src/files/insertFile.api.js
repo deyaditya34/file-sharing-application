@@ -1,6 +1,7 @@
 const path = require("path");
 
 const buildApiHandler = require("../api-utils/build-api-handler");
+const { logReceiver } = require("../logs/log-events");
 const userResolver = require("../middlewares/user-resolver");
 const config = require("../config");
 const filesService = require("./files.service");
@@ -34,6 +35,17 @@ async function controller(req, res) {
     sharedWith: [],
   });
 
+  logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+    username: user.username,
+    fileId: file.filename,
+    fileName: parsedFileName.originalName,
+    fileExtension: parsedFileName.extension,
+    mimeType: file.mimetype,
+    createdAt: new Date(),
+    user: user,
+    sharedWith: [],
+    resMessage: "File inserted to DB and Disk"
+  });
   res.json({
     message: "success",
     data: {
