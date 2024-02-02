@@ -1,6 +1,3 @@
-const fs = require("fs-extra");
-const path = require("path");
-
 const buildApiHandler = require("../api-utils/build-api-handler");
 const { logReceiver } = require("../logs/log-events");
 const userResolver = require("../middlewares/user-resolver");
@@ -9,7 +6,7 @@ const filesService = require("./files.service");
 const config = require("../config");
 
 async function controller(req, res) {
-  const { id } = req.query;
+  const { id } = req.params;
   const { user } = req.body;
 
   const existingFile = await filesService.getFile(id, user.username);
@@ -25,12 +22,9 @@ async function controller(req, res) {
     });
     return;
   }
-
-  await filesService.deleteFile(id, user.username);
-
-  const WRITE_FILE_PATH = path.join(config.FILE_WRITE_DIRECTORY, id);
-
-  fs.rmSync(WRITE_FILE_PATH);
+  
+  let deleteFileTimeStamp = new Date();
+  await filesService.deleteFile(id, user.username, deleteFileTimeStamp);
 
   logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
     fileId: id,
@@ -47,7 +41,7 @@ async function controller(req, res) {
 
 const missingParamsValidator = paramsValidator.createParamValidator(
   ["id"],
-  paramsValidator.REQ_COMPONENT.QUERY
+  paramsValidator.REQ_COMPONENT.PARAMS
 );
 
 module.exports = buildApiHandler([

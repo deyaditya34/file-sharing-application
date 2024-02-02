@@ -16,7 +16,7 @@ async function controller(req, res) {
     logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
       username: user.username,
       searchFilters: parsedFilters,
-      resMessage: "No file found"
+      resMessage: "No file found",
     });
 
     res.json({
@@ -28,10 +28,10 @@ async function controller(req, res) {
   logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
     username: user.username,
     searchFilters: parsedFilters,
-    result,
-    resMessage: "file found"
+    data: result,
+    resMessage: "file found",
   });
-  
+
   res.json({
     message: "file found",
     data: result,
@@ -61,11 +61,6 @@ function parseFilters(obj) {
   if (Reflect.has(obj, "fileName")) {
     let fileName = Reflect.get(obj, "fileName");
     result.fileName = fileName;
-  }
-
-  if (Reflect.has(obj, "fileExtension")) {
-    let fileExtension = Reflect.get(obj, "fileExtension");
-    result.fileExtension = fileExtension;
   }
 
   if (

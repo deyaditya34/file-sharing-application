@@ -8,14 +8,14 @@ const jwtService = require("../service/jwt.service");
 const paramsValidator = require("../middlewares/params-validator");
 const config = require("../config");
 const filesService = require("./files.service");
-const { decipher } = require("../middlewares/file-decryption");
+const fileUtils = require("./file.utils")
 
 async function controller(req, res) {
-  const { fileToken } = req.query;
+  const { fileLink } = req.query;
   const { user } = req.body;
 
-  const fileDetails = decodeId(fileToken);
-
+  const fileDetails = decodeLink(fileLink);
+  
   const existingFile = await filesService.getFile(
     fileDetails.fileId,
     fileDetails.username
@@ -28,14 +28,16 @@ async function controller(req, res) {
       fileId: fileDetails.fileId,
       resMessage: "No file found for the given link",
     });
+
     res.json({
       message: "No file found for the given link",
     });
+
     return;
   }
 
-  const READ_FILE_PATH = path.join(
-    config.FILE_WRITE_DIRECTORY,
+  const destFilePath = path.join(
+    config.DEST_DIR,
     existingFile.fileId
   );
 
@@ -43,19 +45,21 @@ async function controller(req, res) {
     "Content-Type",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation"
   );
+
   res.setHeader(
     "Content-Disposition",
     `attachment; filename=${existingFile.fileName}`
   );
 
-  const fsReadStream = fs.createReadStream(READ_FILE_PATH);
+  const fsReadStream = fs.createReadStream(destFilePath);
 
-  fsReadStream.pipe(decipher).pipe(res);
+  fsReadStream.pipe(fileUtils.decipher).pipe(res);
 
   fsReadStream.on("error", (err) => {
     console.error(
       `Error in streaming the file - '${existingFile.fileName}': ${err}`
     );
+
     logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
       username: user.username,
       fileLink: fileToken,
@@ -63,6 +67,7 @@ async function controller(req, res) {
       APIError: `Error in streaming the file - '${existingFile.fileName}': ${err}`,
       resMessage: "Internal Server Error",
     });
+
     res.status(500).json({
       message: "Internal Server Error",
     });
@@ -71,17 +76,18 @@ async function controller(req, res) {
   res.on("finish", () => {
     logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
       username: user.username,
-      fileLink: fileToken,
+      fileLink: fileLink,
       fileId: fileDetails.fileId,
       resMessage: "File downloaded",
     });
+
     fsReadStream.close();
   });
 }
 
-function decodeId(token) {
-  let payload = jwtService.decodeToken(token, config.JWT_SECRET_KEY);
-
+function decodeLink(token) {
+  let payload = jwtService.decodeToken(token);
+  
   return {
     fileId: payload.id,
     username: payload.username,
@@ -89,7 +95,7 @@ function decodeId(token) {
 }
 
 const missingParamsValidator = paramsValidator.createParamValidator(
-  ["fileToken"],
+  ["fileLink"],
   paramsValidator.REQ_COMPONENT.QUERY
 );
 

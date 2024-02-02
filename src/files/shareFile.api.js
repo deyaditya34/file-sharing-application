@@ -10,7 +10,7 @@ async function controller(req, res) {
   const { id } = req.params;
   const { user } = req.body;
 
-  const existingFile = filesService.getFile(id, user);
+  const existingFile = filesService.getFile(id, user.username);
 
   if (!existingFile) {
     logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
@@ -30,24 +30,23 @@ async function controller(req, res) {
   logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
     fileId: id,
     username: user.username,
-    fileLink: link,
+    data: link,
     resMessage: "File link sent"
   });
 
   res.json({
     message: "File link sent",
-    fileLink: link,
+    data: link,
   });
 }
 
 function linkGenerate(token) {
-  return `http://127.0.0.1:${config.PORT_NUMBER}/files/access?fileToken=${token}`;
+  return `http://127.0.0.1:${config.PORT_NUMBER}/files/by-link?fileLink=${token}`;
 }
 
 function generateToken(id, username) {
   return jwtService.createToken(
-    { id: id, username: username },
-    config.JWT_SECRET_KEY
+    { id: id, username: username }
   );
 }
 

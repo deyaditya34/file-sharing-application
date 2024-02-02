@@ -1,16 +1,16 @@
 const buildApiHandler = require("../api-utils/build-api-handler");
 const filesService = require("./files.service");
 const paramsValidator = require("../middlewares/params-validator");
-const fileNameResolver = require("../middlewares/file-name-resolver");
+const fileUtils = require("./file.utils")
 const userResolver = require("../middlewares/user-resolver");
-const config = require("../config");
 const { logReceiver } = require("../logs/log-events");
+const config = require("../config");
 
 async function controller(req, res) {
-  const { id } = req.query;
+  const { id } = req.params;
   const { newName, user } = req.body;
 
-  const existingFile = await filesService.getFile(id, user);
+  const existingFile = await filesService.doesFileIdExistsForUser(id, user);
 
   if (!existingFile) {
     logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
@@ -24,27 +24,26 @@ async function controller(req, res) {
     return;
   }
 
-  let parsedFileName = await fileNameResolver(newName);
+  let newUniqueName = await fileUtils.buildUniqueNameForUser(newName, user.username);
 
-  await filesService.renameFileName(id, parsedFileName.fileName, user);
+  await filesService.renameFile(id, user.username, newUniqueName);
 
   logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
     fileId: id,
-    fileName: parsedFileName.fileName,
+    fileName: newUniqueName,
     username: user.username,
     resMessage: "file name changed",
   });
 
   res.json({
     message: "file name changed",
-    name: parsedFileName.fileName,
-    extension: parsedFileName.extension,
+    data: newUniqueName,
   });
 }
 
 const missingQueryParamsValidator = paramsValidator.createParamValidator(
   ["id"],
-  paramsValidator.REQ_COMPONENT.QUERY
+  paramsValidator.REQ_COMPONENT.PARAMS
 );
 
 const missingBodyParamsValidator = paramsValidator.createParamValidator(
