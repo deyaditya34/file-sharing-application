@@ -20,9 +20,9 @@ async function start() {
   console.log("database connected.. Connecting to server");
 
   const server = express();
-  server.use(express.json());
   server.use(requestLogger);
   server.use(logResolver);
+  server.use(express.json());
 
   server.use("/auth", authRouter);
   server.use("/files", filesRouter);

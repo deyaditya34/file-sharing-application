@@ -2,7 +2,6 @@ const crypto = require("crypto");
 const fs = require("fs-extra");
 
 const config = require("../config");
-const {deleteReadFile} = require("./file-read-write-resolver")
 
 const key = crypto.scryptSync(
   config.ENCRYPTION_PASSWORD,
@@ -26,12 +25,22 @@ async function encryptingAndStoringData(
 
   fsWriteStream.on("finish", ()=> {
     console.log(`Finished writing - "${fileName}" to '${writeFilePath}'`)
-    deleteReadFile(readFilePath, fileName)
   })
 }
 
-module.exports = {
-  encryptingAndStoringData,
-  key,
-  iv
+async function deleteReadFile(readFilePath, fileName) {
+  fs.remove(readFilePath)
+    .then(() => {
+      console.log(`Upload File - '${fileName}' deleted from '${readFilePath}'`);
+    })
+    .catch((err) => {
+      console.log("Unable to delete upload file -", err);
+    });
+}
+
+async function decryptAndSendFile(filePath) {
+
+  const decipher = crypto.createDecipheriv(config.ENCRYPTION_ALGORITHM, key, iv);
+
+  return decipher
 }

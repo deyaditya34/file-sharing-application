@@ -6,14 +6,14 @@ const userResolver = require("../middlewares/user-resolver");
 const config = require("../config");
 const filesService = require("./files.service");
 const fileNameResolver = require("../middlewares/file-name-resolver");
-const fileEncryption = require("../middlewares/file-encryption");
+const fileUtils = require("./file.utils");
 
 async function controller(req, res) {
   const file = req.file;
   const { user } = req.body;
 
-  const READ_FILE_PATH = path.join(config.FILE_READ_DIRECTORY, file.filename);
-  const WRITE_FILE_PATH = path.join(config.FILE_WRITE_DIRECTORY, file.filename);
+  const tmpPath = path.join(config.SRC_DIR, file.filename);
+  const finalpath = path.join(config.DEST_DIR, file.filename);
 
   let parsedFileName = await fileNameResolver(file.originalname, user);
 

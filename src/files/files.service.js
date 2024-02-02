@@ -22,7 +22,7 @@ async function getFile(id, username) {
     .getCollection(config.MYFILES)
     .findOne(
       { fileId: id },
-      { $or: [{ "user.username": username }, { sharedWith: "username" }] }
+      { $or: [{ "user.username": username }, { sharedWith: username }] }
     );
 }
 
@@ -30,7 +30,7 @@ async function searchFile(filter, username) {
   return database
     .getCollection(config.MYFILES)
     .find(filter, {
-      $or: [{ "user.username": username }, { sharedWith: "username" }],
+      $or: [{ "user.username": username }, { sharedWith: username }],
     })
     .toArray();
 }
