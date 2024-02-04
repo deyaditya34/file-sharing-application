@@ -1,27 +1,41 @@
 const buildApiHandler = require("../api-utils/build-api-handler");
 const { searchFile } = require("./files.service");
-const userResolver = require("../middlewares/user-resolver")
+const userResolver = require("../middlewares/user-resolver");
+const config = require("../config");
+const { logReceiver } = require("../logs/log-events");
 
 async function controller(req, res) {
-  const {user} = req.body;
+  const { user } = req.body;
   let parsedQueries = parsedQueryVal(req, "query");
 
   let parsedFilters = parseFilters(parsedQueries);
-  
+
   const result = await searchFile(parsedFilters, user.username);
 
   if (result.length === 0) {
+    logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+      username: user.username,
+      searchFilters: parsedFilters,
+      resMessage: "No file found",
+    });
+
     res.json({
-      message: "No file found"
-    })
+      message: "No file found",
+    });
     return;
   }
 
+  logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+    username: user.username,
+    searchFilters: parsedFilters,
+    data: result,
+    resMessage: "file found",
+  });
+
   res.json({
     message: "file found",
-    data: result
-  })
-  
+    data: result,
+  });
 }
 
 function parsedQueryVal(obj, key) {
@@ -47,11 +61,6 @@ function parseFilters(obj) {
   if (Reflect.has(obj, "fileName")) {
     let fileName = Reflect.get(obj, "fileName");
     result.fileName = fileName;
-  }
-
-  if (Reflect.has(obj, "fileExtension")) {
-    let fileExtension = Reflect.get(obj, "fileExtension");
-    result.fileExtension = fileExtension;
   }
 
   if (

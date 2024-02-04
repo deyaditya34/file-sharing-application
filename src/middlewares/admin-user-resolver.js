@@ -3,16 +3,15 @@ const httpError = require("http-errors");
 const config = require("../config");
 const authUtils = require("../auth/auth.utils");
 
-async function userResolver(req, res, next) {
+async function adminUserResolver(req, res, next) {
   const token = Reflect.get(req.headers, config.AUTH_TOKEN_HEADER_FIELD);
 
   if (!token) {
     throw new httpError.Forbidden(`Field 'token' is missing from req.headers.`);
   }
+  const user = await authUtils.getUserFromToken(token, "admin");
+  console.log("user -", user);
 
-  const user = await authUtils.getUserFromToken(token, "user");
-  console.log("user -", user)
-  
   if (!user) {
     throw new httpError.Unauthorized("invalid user");
   }
@@ -21,4 +20,4 @@ async function userResolver(req, res, next) {
   next();
 }
 
-module.exports = userResolver;
+module.exports = adminUserResolver

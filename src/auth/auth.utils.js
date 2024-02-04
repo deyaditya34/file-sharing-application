@@ -12,13 +12,21 @@ function buildUser(username, password) {
   };
 }
 
+function buildAdminUser(username, password) {
+  return {
+    username: username,
+    password: encryptPassword(password),
+    role: "admin"
+  }
+}
+
 function encryptPassword(password) {
   return scryptSync(password, config.ENCRYPTED_PASSWORD_SALT, 64).toString(
     "hex"
   );
 }
 
-async function getUserFromToken(token) {
+async function getUserFromToken(token, role) {
   const payload = jwtService.decodeToken(token);
   if (!payload) {
     return null;
@@ -29,7 +37,7 @@ async function getUserFromToken(token) {
   const user = await database
     .getCollection(config.COLLECTION_NAME_USERS)
     .findOne(
-      { username: username },
+      { username: username, role: role },
       { projection: { _id: false, password: false, role: false } }
     );
 
@@ -38,5 +46,6 @@ async function getUserFromToken(token) {
 
 module.exports = {
   buildUser,
+  buildAdminUser,
   getUserFromToken,
 };

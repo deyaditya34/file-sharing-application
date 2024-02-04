@@ -1,5 +1,7 @@
-const authService = require("./auth.service");
+const httpError = require("http-errors");
+
 const buildApiHandler = require("../api-utils/build-api-handler");
+const authService = require("./auth.service");
 
 async function controller(req, res) {
   const { username, password } = req.body;
@@ -10,7 +12,7 @@ async function controller(req, res) {
     );
   }
 
-  const token = await authService.loginUser(username, password);
+  const token = await authService.loginAdminUser(username, password);
 
   res.json({
     message: "user logged in",
