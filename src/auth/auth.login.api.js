@@ -1,3 +1,5 @@
+const httpError = require("http-errors");
+
 const authService = require("./auth.service");
 const buildApiHandler = require("../api-utils/build-api-handler");
 
@@ -5,7 +7,7 @@ async function controller(req, res) {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    throw new httpError.BadRequest(
+    throw new httpError.Forbidden(
       `username or passwor is missing from req.body`
     );
   }
@@ -14,7 +16,7 @@ async function controller(req, res) {
 
   res.json({
     message: "user logged in",
-    token: token,
+    data: { token },
   });
 }
 

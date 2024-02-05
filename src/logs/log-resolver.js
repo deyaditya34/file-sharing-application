@@ -1,7 +1,7 @@
 const logsService = require("./logs.service");
 const {finalLogs, logMaker} = require("./log-events");
 
-async function logResolver(req, res, next) {
+function logResolver(req, res, next) {
   const { url, method } = req;
 
   const timeStampStart = Date.now();

@@ -7,42 +7,43 @@ const { logReceiver } = require("../logs/log-events");
 const config = require("../config");
 
 async function controller(req, res) {
-  const { id } = req.params;
+  const { fileId } = req.params;
   const { newName, user } = req.body;
 
-  const existingFile = await filesService.doesFileIdExistsForUser(id, user);
+  let newUniqueName = await fileUtils.buildUniqueNameForUser(newName, user.username);
+  
+  const updateFileRecord = await filesService.renameFile(fileId, user.username, newUniqueName);
 
-  if (!existingFile) {
+  if (!updateFileRecord.modifiedCount) {
     logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
-      fileId: id,
+      fileId,
       username: user.username,
-      resMessage: `No file found for the id - ${id}`,
+      resMessage: `No file found for the id - ${fileId}`,
     });
     res.json({
-      message: `No file found for the id - ${id}`,
+      success: updateFileRecord.acknowledged,
+      data: `No file found for the id - ${fileId}`,
     });
     return;
   }
 
-  let newUniqueName = await fileUtils.buildUniqueNameForUser(newName, user.username);
-
-  await filesService.renameFile(id, user.username, newUniqueName);
-
   logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
-    fileId: id,
+    fileId,
     fileName: newUniqueName,
     username: user.username,
     resMessage: "file name changed",
   });
 
   res.json({
+    success: updateFileRecord.acknowledged,
     message: "file name changed",
     data: newUniqueName,
+    
   });
 }
 
 const missingQueryParamsValidator = paramsValidator.createParamValidator(
-  ["id"],
+  ["fileId"],
   paramsValidator.REQ_COMPONENT.PARAMS
 );
 

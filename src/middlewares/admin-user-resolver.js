@@ -9,11 +9,14 @@ async function adminUserResolver(req, res, next) {
   if (!token) {
     throw new httpError.Forbidden(`Field 'token' is missing from req.headers.`);
   }
-  const user = await authUtils.getUserFromToken(token, "admin");
-  console.log("user -", user);
+  const user = await authUtils.getUserFromToken(token);
 
   if (!user) {
-    throw new httpError.Unauthorized("invalid user");
+    throw new httpError.Forbidden("No user found. Token not valid.")
+  }
+
+  if (user.role !== "admin") {
+    throw new httpError.Unauthorized("Access Denied. Token not valid.");
   }
 
   Reflect.set(req.body, "user", user);

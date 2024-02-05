@@ -11,35 +11,48 @@ async function controller(req, res) {
   const file = req.file;
   const { user } = req.body;
 
-  const tmpPath = path.join(config.SRC_DIR, file.filename);
-  const finalpath = path.join(config.DEST_DIR, file.filename);
+  const tmpPath = path.join(config.TEMP_DIR, file.filename);
+  const storePath = path.join(config.SRC_DIR, file.filename);
 
-  let uniqueName = await fileUtils.buildUniqueNameForUser(file.originalname, user.username);
+  let uniqueName = await fileUtils.buildUniqueNameForUser(
+    file.originalname,
+    user.username
+  );
 
+  const storeEncryptFile = await filesService.storeEncryptedFile(
+    tmpPath,
+    storePath
+  );
   
-
-  await fileUtils.encryptAndStoreFile(tmpPath, finalpath)
-  await fileUtils.deleteFile(tmpPath)
+  try {
+    filesService.deleteFile(tmpPath)
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Not able to delete the temp uploaded file"
+    })
+  }
 
   const fileRecord = {
     fileId: file.filename,
     fileName: uniqueName,
     mimeType: file.mimetype,
     createdAt: new Date(),
-    user: user.username,
-    sharedWith: [],
-  }
+    username: user.username,
+    status: "active",
+  };
 
   await filesService.insertFile(fileRecord);
 
   logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
     ...fileRecord,
-    resMessage: "File inserted to DB and Disk"
+    resMessage: "File inserted to DB and Disk",
   });
 
   res.json({
-    message: "success",
-    data: fileRecord
+   success: true,
+    data: fileRecord,
+    message: storeEncryptFile
   });
 }
 

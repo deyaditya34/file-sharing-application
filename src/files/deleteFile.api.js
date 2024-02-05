@@ -6,41 +6,42 @@ const filesService = require("./files.service");
 const config = require("../config");
 
 async function controller(req, res) {
-  const { id } = req.params;
+  const { fileId } = req.params;
   const { user } = req.body;
 
-  const existingFile = await filesService.getFile(id, user.username);
+  const deleteFileRecord = await filesService.changeFileStatusToDelete(fileId, user.username);
 
-  if (!existingFile) {
+  if (!deleteFileRecord) {
     logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
-      fileId: id,
+      fileId,
       username: user.username,
-      resMessage: `No file found for the id - ${id}`,
+      resMessage: `File - '${fileId}' already deleted or not file found to delete.`,
     });
+
     res.json({
-      message: `No file found for the id - ${id}`,
+      success: false,
+      message: `File - '${fileId}' already deleted or not file found to delete.`,
     });
     return;
   }
-  
-  let deleteFileTimeStamp = new Date();
-  await filesService.deleteFile(id, user.username, deleteFileTimeStamp);
 
-  logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
-    fileId: id,
-    fileName: existingFile.fileName,
-    username: user.username,
-    resMessage: "File deleted",
-  });
+  if (deleteFileRecord.modifiedCount) {
+    logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+      fileId,
+      username: user.username,
+      resMessage: "File deleted",
+    });
 
-  res.json({
-    message: "File deleted",
-    fileName: existingFile.fileName,
-  });
+    res.json({
+      success: true,
+      message: "File deleted",
+      data: deleteFileRecord.modifiedCount,
+    });
+  }
 }
 
 const missingParamsValidator = paramsValidator.createParamValidator(
-  ["id"],
+  ["fileId"],
   paramsValidator.REQ_COMPONENT.PARAMS
 );
 

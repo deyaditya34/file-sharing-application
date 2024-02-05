@@ -10,8 +10,7 @@ async function userResolver(req, res, next) {
     throw new httpError.Forbidden(`Field 'token' is missing from req.headers.`);
   }
 
-  const user = await authUtils.getUserFromToken(token, "user");
-  console.log("user -", user)
+  const user = await authUtils.getUserFromToken(token);
   
   if (!user) {
     throw new httpError.Unauthorized("invalid user");

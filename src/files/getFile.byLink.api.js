@@ -1,5 +1,4 @@
 const path = require("path");
-const fs = require("fs-extra");
 
 const buildApiHandler = require("../api-utils/build-api-handler");
 const { logReceiver } = require("../logs/log-events");
@@ -8,38 +7,33 @@ const jwtService = require("../service/jwt.service");
 const paramsValidator = require("../middlewares/params-validator");
 const config = require("../config");
 const filesService = require("./files.service");
-const fileUtils = require("./file.utils")
 
 async function controller(req, res) {
-  const { fileLink } = req.query;
+  const { token } = req.query;
   const { user } = req.body;
 
-  const fileDetails = decodeLink(fileLink);
-  
-  const existingFile = await filesService.getFile(
+  const fileDetails = decodeLink(token);
+
+  const existingFileRecord = await filesService.getFile(
     fileDetails.fileId,
     fileDetails.username
   );
 
-  if (!existingFile) {
+  if (!existingFileRecord) {
     logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
       username: user.username,
-      fileLink: fileToken,
+      token,
       fileId: fileDetails.fileId,
       resMessage: "No file found for the given link",
     });
 
     res.json({
+      success: "false",
       message: "No file found for the given link",
     });
-
-    return;
   }
 
-  const destFilePath = path.join(
-    config.DEST_DIR,
-    existingFile.fileId
-  );
+  const storeFilePath = path.join(config.SRC_DIR, fileDetails.fileId);
 
   res.setHeader(
     "Content-Type",
@@ -48,46 +42,30 @@ async function controller(req, res) {
 
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename=${existingFile.fileName}`
+    `attachment; filename=${existingFileRecord.fileName}`
   );
 
-  const fsReadStream = fs.createReadStream(destFilePath);
-
-  fsReadStream.pipe(fileUtils.decipher).pipe(res);
-
-  fsReadStream.on("error", (err) => {
-    console.error(
-      `Error in streaming the file - '${existingFile.fileName}': ${err}`
+  try {
+    await filesService.getFileByToken(
+      token,
+      storeFilePath,
+      res,
+      fileDetails.fileId,
+      existingFileRecord.fileName,
+      user.username
     );
-
-    logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
-      username: user.username,
-      fileLink: fileToken,
-      fileId: fileDetails.fileId,
-      APIError: `Error in streaming the file - '${existingFile.fileName}': ${err}`,
-      resMessage: "Internal Server Error",
-    });
-
+  } catch (err) {
     res.status(500).json({
-      message: "Internal Server Error",
+      success: false,
+      message: "internal server error",
+      data: err,
     });
-  });
-
-  res.on("finish", () => {
-    logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
-      username: user.username,
-      fileLink: fileLink,
-      fileId: fileDetails.fileId,
-      resMessage: "File downloaded",
-    });
-
-    fsReadStream.close();
-  });
+  }
 }
 
 function decodeLink(token) {
   let payload = jwtService.decodeToken(token);
-  
+
   return {
     fileId: payload.id,
     username: payload.username,
@@ -95,7 +73,7 @@ function decodeLink(token) {
 }
 
 const missingParamsValidator = paramsValidator.createParamValidator(
-  ["fileLink"],
+  ["token"],
   paramsValidator.REQ_COMPONENT.QUERY
 );
 

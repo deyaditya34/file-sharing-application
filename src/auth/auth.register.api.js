@@ -6,12 +6,12 @@ const paramsValidator = require("../middlewares/params-validator");
 async function controller(req, res) {
   const { username, password } = req.body;
 
-  const existingUsername = await authService.findUserByUsername(username, "user");
+  const existingUsername = await authService.findUserByUsername(username);
 
   if (existingUsername) {
     res.json({
-      message: `username - '${username}' aldready exists.`
-    })
+      message: `username - '${username}' aldready exists.`,
+    });
     return;
   }
 
@@ -20,10 +20,12 @@ async function controller(req, res) {
   await authService.registerUser(userDetails);
 
   res.json({
+    success: true,
     message: "registration done",
-    credentials: {
-      username,
-      password
+    data: {
+      credentials: {
+        username
+      },
     },
   });
 }
@@ -33,5 +35,4 @@ const missingParamsValidator = paramsValidator.createParamValidator(
   paramsValidator.REQ_COMPONENT.BODY
 );
 
-module.exports = buildApiHandler([missingParamsValidator, 
-  controller]);
+module.exports = buildApiHandler([missingParamsValidator, controller]);
