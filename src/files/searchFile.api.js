@@ -1,3 +1,5 @@
+const httpError = require("http-errors");
+
 const buildApiHandler = require("../api-utils/build-api-handler");
 const { searchFile } = require("./files.service");
 const userResolver = require("../middlewares/user-resolver");
@@ -7,10 +9,13 @@ const { logReceiver } = require("../logs/log-events");
 async function controller(req, res) {
   const { user } = req.body;
 
-  let parsedFilters = parseFilters(req.body);
-  
-  console.log(parsedFilters);
-  
+  let parsedFilters;
+  try {
+    parsedFilters = parseFilters(req.body);
+  } catch (err) {
+    res.status(400).send(err);
+  }
+
   const result = await searchFile(parsedFilters, user.username);
 
   if (result.length === 0) {
@@ -105,8 +110,15 @@ function parseFilters(obj) {
     result.deletedAt = { $lte: new Date(`${lesserThanEqualDate}`) };
   }
 
+  if (Reflect.has(obj, "isShared") && Reflect.has(obj, "sharedWith")) {
+    throw new httpError.BadRequest(
+      `Field 'isShared' and 'sharedWith' cannot be processed together.`
+    );
+  }
+
   if (Reflect.has(obj, "isShared")) {
     const isSharedValue = Reflect.get(obj, "isShared");
+
     if (isSharedValue === true || isSharedValue === false) {
       result["shares.method"] = { $exists: isSharedValue };
     }
@@ -123,7 +135,7 @@ function parseFilters(obj) {
     const statusValue = Reflect.get(obj, "status");
 
     if (statusValue === true) {
-      result.status = statusValue
+      result.status = statusValue;
     }
   }
 
