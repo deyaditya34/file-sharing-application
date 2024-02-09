@@ -17,11 +17,9 @@ async function loginUser(username, password) {
   const existingUser = await findUser(userDetails);
 
   if (!existingUser) {
-    throw new httpError.BadRequest(
-      `username - '${username}' or password - '${password}' is invalid.`
-    );
+    throw new httpError.BadRequest(`'username/password'  is invalid.`);
   }
-  
+
   const token = createToken({ username });
 
   return token;
@@ -38,7 +36,6 @@ async function findUser(userDetails) {
     .getCollection(config.COLLECTION_NAME_USERS)
     .findOne(userDetails);
 }
-
 
 module.exports = {
   registerUser,

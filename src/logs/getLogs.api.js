@@ -1,5 +1,5 @@
 const buildApiHandler = require("../api-utils/build-api-handler");
-const adminUserResolver = require("../middlewares/admin-user-resolver")
+const userResolver = require("../middlewares/user-resolver")
 const logsService = require("./logs.service")
 
 async function controller(req, res) {
@@ -13,4 +13,4 @@ async function controller(req, res) {
 
 }
 
-module.exports = buildApiHandler([adminUserResolver, controller])
+module.exports = buildApiHandler([userResolver("admin"), controller])

@@ -130,4 +130,4 @@ function parseFilters(obj) {
   return result;
 }
 
-module.exports = buildApiHandler([userResolver, controller]);
+module.exports = buildApiHandler([userResolver("user"), controller]);

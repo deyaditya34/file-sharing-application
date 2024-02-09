@@ -17,7 +17,7 @@ async function controller(req, res) {
 
 
 module.exports = buildApiHandler([
-  userResolver,
+  userResolver("user"),
   missingParamsValidator,
   controller,
 ]);
