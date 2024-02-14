@@ -16,3 +16,5 @@ module.exports = {
   COLLECTION_NAMES_LOGS: process.env.COLLECTION_NAMES_LOGS,
   EVENT_NAME_LOG_COLLECTION: process.env.EVENT_NAME_LOG_COLLECTION
 };
+
+console.log(process.env.PORT_NUMBER, process.env.MONGOURI)
