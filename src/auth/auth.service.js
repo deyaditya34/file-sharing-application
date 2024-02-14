@@ -7,7 +7,7 @@ const { createToken } = require("../service/jwt.service");
 
 async function registerUser(userDetails) {
   await database
-    .getCollection(config.COLLECTION_NAME_USERS)
+    .getCollection(config.COLLECTION_NAMES_USERS)
     .insertOne({ ...userDetails, role: "user" });
 }
 
@@ -27,13 +27,13 @@ async function loginUser(username, password) {
 
 async function findUserByUsername(username) {
   return database
-    .getCollection(config.COLLECTION_NAME_USERS)
+    .getCollection(config.COLLECTION_NAMES_USERS)
     .findOne({ username });
 }
 
 async function findUser(userDetails) {
   return database
-    .getCollection(config.COLLECTION_NAME_USERS)
+    .getCollection(config.COLLECTION_NAMES_USERS)
     .findOne(userDetails);
 }
 

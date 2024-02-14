@@ -26,7 +26,7 @@ async function getUserFromToken(token) {
   const username = payload.username;
 
   const user = await database
-    .getCollection(config.COLLECTION_NAME_USERS)
+    .getCollection(config.COLLECTION_NAMES_USERS)
     .findOne(
       { username: username },
       { projection: { _id: false, password: false } }

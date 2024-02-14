@@ -31,12 +31,12 @@ try {
 const decipher = crypto.createDecipheriv(config.ENCRYPTION_ALGORITHM, KEY, iv);
 
 async function insertFile(fileDetails) {
-  return database.getCollection(config.MYFILES).insertOne(fileDetails);
+  return database.getCollection(config.COLLECTION_NAMES_FILES).insertOne(fileDetails);
 }
 
 async function doesFilenameExistsForUser(fileName, username) {
   let existingFile = await database
-    .getCollection(config.MYFILES)
+    .getCollection(config.COLLECTION_NAMES_FILES)
     .findOne({ fileName: fileName }, { "user.username": username });
 
   if (existingFile) {
@@ -48,7 +48,7 @@ async function doesFilenameExistsForUser(fileName, username) {
 
 async function doesFileIdExistsForUser(fileId, username) {
   let existingFile = await database
-    .getCollection(config.MYFILES)
+    .getCollection(config.COLLECTION_NAMES_FILES)
     .findOne({ fileId, username });
 
   if (existingFile) {
@@ -60,7 +60,7 @@ async function doesFileIdExistsForUser(fileId, username) {
 
 async function renameFile(fileId, username, updatedFileName) {
   return database
-    .getCollection(config.MYFILES)
+    .getCollection(config.COLLECTION_NAMES_FILES)
     .updateOne(
       { fileId, username, status: "active" },
       { $set: { fileName: updatedFileName, modifiedAt: new Date() } }
@@ -68,7 +68,7 @@ async function renameFile(fileId, username, updatedFileName) {
 }
 
 async function getFile(fileId, username) {
-  return database.getCollection(config.MYFILES).findOne(
+  return database.getCollection(config.COLLECTION_NAMES_FILES).findOne(
     { fileId, status: "active" },
     {
       $or: [
@@ -86,7 +86,7 @@ async function getFile(fileId, username) {
 
 async function searchFile(filter, username) {
   return database
-    .getCollection(config.MYFILES)
+    .getCollection(config.COLLECTION_NAMES_FILES)
     .find(filter, {
       $or: [
         { username: username },
@@ -103,7 +103,7 @@ async function searchFile(filter, username) {
 
 async function shareFileWithUser(fileId, fileShareDetails) {
   return database
-    .getCollection(config.MYFILES)
+    .getCollection(config.COLLECTION_NAMES_FILES)
     .updateOne(
       { fileId, status: "active" },
       { $push: { shares: { ...fileShareDetails, sharedTime: new Date() } } }
@@ -118,7 +118,7 @@ async function changeFileStatusToDelete(fileId, username) {
   }
 
   const fileDeleted = await database
-    .getCollection(config.MYFILES)
+    .getCollection(config.COLLECTION_NAMES_FILES)
     .findOne({ fileId, username, deletedAt: { $exists: true } });
 
   if (fileDeleted) {
@@ -126,7 +126,7 @@ async function changeFileStatusToDelete(fileId, username) {
   }
 
   return database
-    .getCollection(config.MYFILES)
+    .getCollection(config.COLLECTION_NAMES_FILES)
     .updateOne(
       { fileId, username },
       { $set: { deletedAt: new Date(), status: "deleted" } }

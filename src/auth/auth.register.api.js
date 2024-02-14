@@ -22,7 +22,7 @@ async function controller(req, res) {
   res.json({
     success: true,
     message: "registration done",
-    data: username,
+    data: {username},
   });
 }
 

@@ -13,7 +13,7 @@ async function controller(req, res) {
 
   const tmpPath = path.join(config.TEMP_DIR, file.filename);
   const storePath = path.join(config.SRC_DIR, file.filename);
-
+  
   let uniqueName = await fileUtils.buildUniqueNameForUser(
     file.originalname,
     user.username

@@ -62,7 +62,7 @@ async function controller(req, res) {
     const link = linkGenerate(token);
 
     fileShareDetails.method = method;
-    fileShareDetails.token = token;
+    fileShareDetails.target = token;
     
     await filesService.shareFileWithUser(fileId, fileShareDetails);
 
