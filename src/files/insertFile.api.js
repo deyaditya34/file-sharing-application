@@ -1,46 +1,59 @@
 const path = require("path");
 
 const buildApiHandler = require("../api-utils/build-api-handler");
+const { logReceiver } = require("../logs/log-events");
 const userResolver = require("../middlewares/user-resolver");
 const config = require("../config");
 const filesService = require("./files.service");
-const fileNameResolver = require("../middlewares/file-name-resolver");
-const fileEncryption = require("../middlewares/file-encryption");
+const fileUtils = require("./file.utils");
 
 async function controller(req, res) {
   const file = req.file;
   const { user } = req.body;
 
-  const READ_FILE_PATH = path.join(config.FILE_READ_DIRECTORY, file.filename);
-  const WRITE_FILE_PATH = path.join(config.FILE_WRITE_DIRECTORY, file.filename);
-
-  let parsedFileName = await fileNameResolver(file.originalname, user);
-
-  await fileEncryption.encryptingAndStoringData(
-    READ_FILE_PATH,
-    WRITE_FILE_PATH,
-    parsedFileName.originalName
+  const tmpPath = path.join(config.TEMP_DIR, file.filename);
+  const storePath = path.join(config.SRC_DIR, file.filename);
+  
+  let uniqueName = await fileUtils.buildUniqueNameForUser(
+    file.originalname,
+    user.username
   );
 
-  await filesService.insertFile({
+  const storeEncryptFile = await filesService.storeEncryptedFile(
+    tmpPath,
+    storePath
+  );
+  
+  try {
+    filesService.deleteFile(tmpPath)
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Not able to delete the temp uploaded file"
+    })
+  }
+
+  const fileRecord = {
     fileId: file.filename,
-    fileName: parsedFileName.originalName,
-    fileExtension: parsedFileName.extension,
+    fileName: uniqueName,
     mimeType: file.mimetype,
     createdAt: new Date(),
-    modifiedAt: null,
-    deletedAt: null,
-    user: user,
-    sharedWith: [],
+    username: user.username,
+    status: "active",
+  };
+
+  await filesService.insertFile(fileRecord);
+
+  logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+    ...fileRecord,
+    resMessage: "File inserted to DB and Disk",
   });
 
   res.json({
-    message: "success",
-    data: {
-      fileName: parsedFileName.originalName,
-      fileId: file.filename,
-    },
+   success: true,
+    data: fileRecord,
+    message: storeEncryptFile
   });
 }
 
-module.exports = buildApiHandler([userResolver, controller]);
+module.exports = buildApiHandler([userResolver("user"), controller]);

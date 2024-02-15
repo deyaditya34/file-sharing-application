@@ -1,28 +1,25 @@
-const httpError = require("http-errors")
+const httpError = require("http-errors");
 
 const config = require("../config");
-const authUtils = require("./auth.utils")
+const authUtils = require("./auth.utils");
 const database = require("../service/database.service");
 const { createToken } = require("../service/jwt.service");
 
 async function registerUser(userDetails) {
   await database
-    .getCollection(config.COLLECTION_NAME_USERS)
-    .insertOne(userDetails);
+    .getCollection(config.COLLECTION_NAMES_USERS)
+    .insertOne({ ...userDetails, role: "user" });
 }
 
 async function loginUser(username, password) {
   const userDetails = authUtils.buildUser(username, password);
-  
+
   const existingUser = await findUser(userDetails);
 
   if (!existingUser) {
-    throw new httpError.BadRequest(
-      `username - '${username}' or password - '${password}' is invalid.`
-    );
+    throw new httpError.BadRequest(`'username/password'  is invalid.`);
   }
-  
-  console.log("username -", {username})
+
   const token = createToken({ username });
 
   return token;
@@ -30,13 +27,13 @@ async function loginUser(username, password) {
 
 async function findUserByUsername(username) {
   return database
-    .getCollection(config.COLLECTION_NAME_USERS)
-    .findOne( {username} );
+    .getCollection(config.COLLECTION_NAMES_USERS)
+    .findOne({ username });
 }
 
 async function findUser(userDetails) {
   return database
-    .getCollection(config.COLLECTION_NAME_USERS)
+    .getCollection(config.COLLECTION_NAMES_USERS)
     .findOne(userDetails);
 }
 

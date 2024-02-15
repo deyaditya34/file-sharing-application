@@ -1,36 +1,50 @@
 const buildApiHandler = require("../api-utils/build-api-handler");
 const filesService = require("./files.service");
 const paramsValidator = require("../middlewares/params-validator");
-const fileNameResolver = require("../middlewares/file-name-resolver");
-const userResolver = require("../middlewares/user-resolver")
+const fileUtils = require("./file.utils")
+const userResolver = require("../middlewares/user-resolver");
+const { logReceiver } = require("../logs/log-events");
+const config = require("../config");
 
 async function controller(req, res) {
-  const { id } = req.query;
-  const {newName, user} = req.body;
+  const { fileId } = req.params;
+  const { newName, user } = req.body;
 
-  const existingFile = await filesService.getFile(id, user);
+  let newUniqueName = await fileUtils.buildUniqueNameForUser(newName, user.username);
+  
+  const updateFileRecord = await filesService.renameFile(fileId, user.username, newUniqueName);
 
-  if (!existingFile) {
+  if (!updateFileRecord.modifiedCount) {
+    logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+      fileId,
+      username: user.username,
+      resMessage: `No file found for the id - ${fileId}`,
+    });
     res.json({
-      message: `No file found for the id - ${id}`,
+      success: updateFileRecord.acknowledged,
+      data: `No file found for the id - ${fileId}`,
     });
     return;
   }
 
-  let parsedFileName = await fileNameResolver(newName);
-
-  await filesService.renameFileName(id, parsedFileName.fileName, user);
+  logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+    fileId,
+    fileName: newUniqueName,
+    username: user.username,
+    resMessage: "file name changed",
+  });
 
   res.json({
+    success: updateFileRecord.acknowledged,
     message: "file name changed",
-    name : parsedFileName.fileName,
-    extension : parsedFileName.extension
-  })
+    data: newUniqueName,
+    
+  });
 }
 
 const missingQueryParamsValidator = paramsValidator.createParamValidator(
-  ["id"],
-  paramsValidator.REQ_COMPONENT.QUERY
+  ["fileId"],
+  paramsValidator.REQ_COMPONENT.PARAMS
 );
 
 const missingBodyParamsValidator = paramsValidator.createParamValidator(
@@ -38,4 +52,9 @@ const missingBodyParamsValidator = paramsValidator.createParamValidator(
   paramsValidator.REQ_COMPONENT.BODY
 );
 
-module.exports = buildApiHandler([userResolver, missingQueryParamsValidator, missingBodyParamsValidator, controller]);
+module.exports = buildApiHandler([
+  userResolver("user"),
+  missingQueryParamsValidator,
+  missingBodyParamsValidator,
+  controller,
+]);

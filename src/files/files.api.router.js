@@ -7,19 +7,19 @@ const renameFileApi = require("./renameFile.api");
 const getFileApi = require("./getFile.api");
 const searchFileApi = require("./searchFile.api");
 const shareFileApi = require("./shareFile.api");
-const accessFileApi = require("./accessFile.api");
-const shareFileUserApi = require("./shareFileUser.api");
+const getFileByLinkApi = require("./getFile.byLink.api")
 const deleteFileApi = require("./deleteFile.api");
+const deleteFileLinkApi = require("./deleteFileLink.api");
 
 const router = express.Router();
 
 router.post("/", upload.single("file"), insertFileApi);
-router.post("/rename", renameFileApi);
-router.get("/file", getFileApi);
-router.get("/", searchFileApi);
-router.get("/share/:id", shareFileApi);
-router.get("/access", accessFileApi);
-router.get("/shareUser", shareFileUserApi)
-router.delete("/", deleteFileApi)
+router.get("/by-token", getFileByLinkApi);
+router.put("/:fileId", renameFileApi);
+router.get("/:fileId", getFileApi);
+router.post("/", searchFileApi);
+router.put("/:fileId/share", shareFileApi);
+router.delete("/:fileId", deleteFileApi);
+router.put("/:fileId/deleteLink", deleteFileLinkApi);
 
 module.exports = router;

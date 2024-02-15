@@ -1,66 +1,62 @@
 const path = require("path");
-const fs = require("fs-extra");
 
-const config = require("../config");
+const { logReceiver } = require("../logs/log-events");
 const buildApiHandler = require("../api-utils/build-api-handler");
 const userResolver = require("../middlewares/user-resolver");
 const {
   createParamValidator,
   REQ_COMPONENT,
 } = require("../middlewares/params-validator");
-
 const filesService = require("./files.service");
-const { decipher } = require("../middlewares/file-decryption");
+const config = require("../config");
 
 async function controller(req, res) {
-  const { id } = req.query;
+  const { fileId } = req.params;
   const { user } = req.body;
 
-  const existingFile = await filesService.getFile(id, user.username);
+  const existingFileRecord = await filesService.getFile(fileId, user.username);
 
-  if (!existingFile) {
+  if (!existingFileRecord) {
+    logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+      fileId,
+      username: user.username,
+      resMessage: `No file found for the id - ${fileId}`,
+    });
     res.json({
-      message: `No file found for the id - ${id}`,
+      message: `No file found for the id - ${fileId}`,
     });
     return;
   }
 
-  const READ_FILE_PATH = path.join(config.FILE_WRITE_DIRECTORY, id);
+  const storeFilepath = path.join(config.SRC_DIR, fileId);
 
-  res.setHeader(
-    "Content-Type",
-    `${existingFile.mimeType}`
-  );
+  res.setHeader("Content-Type", `${existingFileRecord.mimeType}`);
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename=${existingFile.fileName}`
+    `attachment; filename=${existingFileRecord.fileName}`
   );
+  
+  try {
 
-  const fsReadStream = fs.createReadStream(READ_FILE_PATH);
+    await filesService.sendDecryptedFile(storeFilepath, existingFileRecord, fileId, user.username, res);
 
-  fsReadStream.pipe(decipher).pipe(res);
-
-  fsReadStream.on("error", (err) => {
-    console.error(
-      `Error in streaming the file - '${existingFile.fileName}': ${err}`
-    );
+  } catch (err) {
+    
     res.status(500).json({
-      message: "Internal Server Error",
-    });
-  });
-
-  res.on("finish", () => {
-    fsReadStream.close();
-  });
+      success: false,
+      message: "internal server error",
+      data: err
+    })
+  }
 }
 
 const missingParamsValidator = createParamValidator(
-  ["id"],
-  REQ_COMPONENT.QUERY
+  ["fileId"],
+  REQ_COMPONENT.PARAMS
 );
 
 module.exports = buildApiHandler([
-  userResolver,
+  userResolver("user"),
   missingParamsValidator,
   controller,
 ]);

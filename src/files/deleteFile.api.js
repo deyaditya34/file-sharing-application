@@ -1,42 +1,52 @@
-const fs = require("fs-extra");
-const path = require("path");
-
 const buildApiHandler = require("../api-utils/build-api-handler");
+const { logReceiver } = require("../logs/log-events");
 const userResolver = require("../middlewares/user-resolver");
 const paramsValidator = require("../middlewares/params-validator");
 const filesService = require("./files.service");
 const config = require("../config");
 
-
 async function controller(req, res) {
-  const {id} = req.query;
-  const {user} = req.body;
+  const { fileId } = req.params;
+  const { user } = req.body;
 
-  const existingFile = await filesService.getFile(id, user.username);
+  const deleteFileRecord = await filesService.changeFileStatusToDelete(fileId, user.username);
 
-  if (!existingFile) {
+  if (!deleteFileRecord) {
+    logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+      fileId,
+      username: user.username,
+      resMessage: `File - '${fileId}' already deleted or not file found to delete.`,
+    });
+
     res.json({
-      message: `No file found for the id - ${id}`
-    })
+      success: false,
+      message: `File - '${fileId}' already deleted or not file found to delete.`,
+    });
     return;
   }
 
-  await filesService.deleteFile(id, user.username);
+  if (deleteFileRecord.modifiedCount) {
+    logReceiver.emit(config.EVENT_NAME_LOG_COLLECTION, {
+      fileId,
+      username: user.username,
+      resMessage: "File deleted",
+    });
 
-  const WRITE_FILE_PATH = path.join(config.FILE_WRITE_DIRECTORY, id);
-
-  fs.rmSync(WRITE_FILE_PATH);
-
-  res.json({
-    message: "File deleted",
-    fileName: existingFile.fileName
-  })
-
+    res.json({
+      success: true,
+      message: "File deleted",
+      data: deleteFileRecord.modifiedCount,
+    });
+  }
 }
 
 const missingParamsValidator = paramsValidator.createParamValidator(
-  ["id"],
-  paramsValidator.REQ_COMPONENT.QUERY
+  ["fileId"],
+  paramsValidator.REQ_COMPONENT.PARAMS
 );
 
-module.exports = buildApiHandler([userResolver,missingParamsValidator, controller]);
+module.exports = buildApiHandler([
+  userResolver("user"),
+  missingParamsValidator,
+  controller,
+]);
