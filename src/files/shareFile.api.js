@@ -19,6 +19,7 @@ async function controller(req, res) {
     await validateUsername(req.body, user.username);
   } catch (err) {
     res.send(err);
+    return;
   }
 
   const existingFileRecord = await filesService.getFile(fileId, user.username);
@@ -58,6 +59,18 @@ async function controller(req, res) {
   }
 
   if (method === "BY_LINK") {
+    const retrieveFileLink = await filesService.retrieveGeneratedFileLink(fileId, user.username);
+    
+    if (retrieveFileLink) {
+      res.json({
+        success: true,
+        message: "File link sent",
+        data: retrieveFileLink,
+      });
+
+      return;
+    }
+
     const token = generateToken(fileId, user.username);
     const link = linkGenerate(token);
 

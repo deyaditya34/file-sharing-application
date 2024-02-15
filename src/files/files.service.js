@@ -31,7 +31,9 @@ try {
 const decipher = crypto.createDecipheriv(config.ENCRYPTION_ALGORITHM, KEY, iv);
 
 async function insertFile(fileDetails) {
-  return database.getCollection(config.COLLECTION_NAMES_FILES).insertOne(fileDetails);
+  return database
+    .getCollection(config.COLLECTION_NAMES_FILES)
+    .insertOne(fileDetails);
 }
 
 async function doesFilenameExistsForUser(fileName, username) {
@@ -82,6 +84,32 @@ async function getFile(fileId, username) {
       ],
     }
   );
+}
+
+async function validateToken(token) {
+  return database.getCollection(config.COLLECTION_NAMES_FILES).findOne({
+    $and: [
+      { status: "active" },
+      { $and: [{ "shares.method": "BY_LINK" }, { "shares.target": token }] },
+    ],
+  });
+}
+
+async function retrieveGeneratedFileLink(fileId, username) {
+  const file = await database
+    .getCollection(config.COLLECTION_NAMES_FILES)
+    .findOne({
+      fileId,
+      username: username,
+      status: "active",
+      "shares.method": "BY_LINK",
+    });
+
+  if (!file) {
+    return null;
+  }
+
+  return file["shares"][0].target;
 }
 
 async function searchFile(filter, username) {
@@ -236,11 +264,15 @@ async function getFileByToken(
         fileId: fileId,
         resMessage: "File downloaded",
       });
-      
+
       fsReadStream.close();
       resolve();
     });
   });
+}
+
+async function removeShareLinkFromFile(fileId, username) {
+  return database.getCollection(config.COLLECTION_NAMES_FILES).updateOne({fileId, username: username}, {$pull : {"shares": {"method": "BY_LINK"}}})
 }
 
 module.exports = {
@@ -256,5 +288,7 @@ module.exports = {
   sendDecryptedFile,
   deleteFile,
   getFileByToken,
+  validateToken,
+  retrieveGeneratedFileLink,
+  removeShareLinkFromFile
 };
-1;

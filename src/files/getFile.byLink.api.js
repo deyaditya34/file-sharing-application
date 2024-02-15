@@ -33,6 +33,16 @@ async function controller(req, res) {
     });
   }
 
+  const existingToken = await filesService.validateToken(token);
+
+  if (!existingToken) {
+    res.json({
+      sucess: "false",
+      message: "Link Expired"
+    })
+    return
+  }
+
   const storeFilePath = path.join(config.SRC_DIR, fileDetails.fileId);
 
   res.setHeader(
